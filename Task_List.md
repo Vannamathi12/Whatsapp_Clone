@@ -4,24 +4,24 @@ This task list outlines the detailed steps for developing the full-stack WhatsAp
 
 ## Phase 1: Project Setup and Environment Configuration (1-2 days)
 
-- [ ] Create project root directory structure: `frontend/` and `backend/` folders
-- [ ] Initialize Git repository and create `.gitignore` file (exclude node_modules, .env, etc.)
-- [ ] Set up backend Node.js project:
-  - [ ] Run `npm init` in `backend/` folder
-  - [ ] Install core dependencies: express, mongoose (for MongoDB), socket.io, bcryptjs, cors, dotenv
-  - [ ] Create basic server.js file with Express setup
-- [ ] Set up frontend React project:
-  - [ ] Use Create React App: `npx create-react-app frontend` or Vite for faster setup
-  - [ ] Install dependencies: axios, react-router-dom, socket.io-client, and a CSS framework (e.g., tailwindcss or material-ui)
-  - [ ] Create basic App.js and index.js files
-- [ ] Configure database:
-  - [ ] Choose MongoDB (local/Atlas) or Postgres on Neon.com
-  - [ ] Set up connection strings in `.env` file (e.g., MONGODB_URI, PORT)
-  - [ ] Test database connection in backend
-- [ ] Update README.md:
-  - [ ] Add project overview and tech stack
-  - [ ] Document installation steps for frontend and backend
-  - [ ] Include environment variables setup and database configuration
+- [x] Create project root directory structure: `frontend/` and `backend/` folders
+- [x] Initialize Git repository and create `.gitignore` file (exclude node_modules, .env, etc.)
+- [x] Set up backend Node.js project:
+  - [x] Run `npm init` in `backend/` folder
+  - [x] Install core dependencies: express, mongoose (for MongoDB), socket.io, bcryptjs, cors, dotenv
+  - [x] Create basic server.js file with Express setup
+- [x] Set up frontend React project:
+  - [x] Use Create React App: `npx create-react-app frontend` or Vite for faster setup
+  - [x] Install dependencies: axios, react-router-dom, socket.io-client, and a CSS framework (e.g., tailwindcss or material-ui)
+  - [x] Create basic App.js and index.js files
+- [x] Configure database:
+  - [x] Choose MongoDB (local/Atlas) or Postgres on Neon.com
+  - [x] Set up connection strings in `.env` file (e.g., MONGODB_URI, PORT)
+  - [x] Test database connection in backend
+- [x] Update README.md:
+  - [x] Add project overview and tech stack
+  - [x] Document installation steps for frontend and backend
+  - [x] Include environment variables setup and database configuration
 
 ## Phase 2: Backend Development (3-5 days)
 
