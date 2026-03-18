@@ -25,27 +25,27 @@ This task list outlines the detailed steps for developing the full-stack WhatsAp
 
 ## Phase 2: Backend Development (3-5 days)
 
-- [ ] Design database schemas:
-  - [ ] User schema: id, username/email, password (hashed), createdAt
-  - [ ] Message schema: sender (user ID), receiver (user ID), content, timestamp
-  - [ ] Chat schema (optional): user1, user2, lastMessage, updatedAt
-- [ ] Implement user authentication APIs:
-  - [ ] POST /api/users/register: Create new user with validation
-  - [ ] POST /api/users/login: Authenticate user (simple username/password)
-  - [ ] GET /api/users: Fetch all users (for chat list)
-  - [ ] Add middleware for password hashing and basic auth
-- [ ] Implement messaging APIs:
-  - [ ] POST /api/messages: Send message (validate sender, receiver, content)
-  - [ ] GET /api/messages/:chatId: Fetch messages for a specific chat (filter by sender/receiver)
-  - [ ] Add error handling for invalid requests (empty messages, non-existent users)
-- [ ] Integrate real-time functionality:
-  - [ ] Set up Socket.IO server in backend
-  - [ ] Emit 'newMessage' event on message send
-  - [ ] Handle client connections and disconnections
-- [ ] Test backend APIs:
-  - [ ] Use Postman to test all endpoints
-  - [ ] Verify data persistence in database
-  - [ ] Check error responses and status codes
+- [x] Design database schemas:
+  - [x] User schema: id, username/email, password (hashed), createdAt
+  - [x] Message schema: sender (user ID), receiver (user ID), content, timestamp
+  - [x] Chat schema (optional): user1, user2, lastMessage, updatedAt
+- [x] Implement user authentication APIs:
+  - [x] POST /api/users/register: Create new user with validation
+  - [x] POST /api/users/login: Authenticate user (simple username/password)
+  - [x] GET /api/users: Fetch all users (for chat list)
+  - [x] Add middleware for password hashing and basic auth
+- [x] Implement messaging APIs:
+  - [x] POST /api/messages: Send message (validate sender, receiver, content)
+  - [x] GET /api/messages/:chatId: Fetch messages for a specific chat (filter by sender/receiver)
+  - [x] Add error handling for invalid requests (empty messages, non-existent users)
+- [x] Integrate real-time functionality:
+  - [x] Set up Socket.IO server in backend
+  - [x] Emit 'newMessage' event on message send
+  - [x] Handle client connections and disconnections
+- [x] Test backend APIs:
+  - [x] Use Postman to test all endpoints
+  - [x] Verify data persistence in database
+  - [x] Check error responses and status codes
 
 ## Phase 3: Frontend Development (4-6 days)
 
