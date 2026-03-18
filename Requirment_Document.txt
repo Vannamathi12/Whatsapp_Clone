@@ -1,0 +1,67 @@
+Full Stack Developer Project: WhatsApp Web Clone
+
+Project Overview
+Build a simplified full-stack clone of WhatsApp Web focusing on core chat functionality. You can use AI for building the application. The objective is to demonstrate full-stack development skills, application structuring, and data handling within a limited timeframe.
+
+Technical Requirements
+
+1.	User Setup
+Implement basic user handling:
+●	User creation or identification mechanism
+●	Support at least two users
+●	Each user should have a unique identifier
+●	Users should be distinguishable during chat interactions
+●	Authentication:You may implement a simple authentication system using a username or email.
+
+2.	Chat Interface
+Create a WhatsApp Web like interface:
+●	Two-panel layout with chat list and chat window
+●	Chat list displaying available conversations or users
+●	Active chat highlighting
+●	Chat window displaying message history
+●	Message input field with send action
+●	Sent and received messages must be visually distinct
+●	Automatic scroll to latest message
+
+3.	Messaging Functionality
+Implement core messaging features:
+●	Send text messages between users
+●	Store messages in MongoDB
+●	Fetch messages based on selected chat
+●	Display messages in chronological order
+●	Persist messages after page refresh
+●	Associate each message with sender, receiver, and timestamp
+
+4.	Backend APIs
+Develop REST APIs for chat operations:
+●	Create and fetch users or chats
+●	Send and retrieve messages
+●	Handle invalid requests and empty messages
+●	Use proper request methods and status codes
+ 
+5.	Real-Time Updates
+Enhance the application with real-time behavior:
+●	Instant message updates using WebSockets or Socket.IO
+●	Live message rendering without page refresh
+
+6.	Application Structure
+Maintain a clean and organized codebase:
+●	Separate frontend and backend projects
+●	Logical folder structure
+●	Reusable components on frontend
+●	Proper schema design in MongoDB
+
+Technology Stack Frontend
+●	React.js
+●	React Router
+●	Axios
+●	CSS / any UI framework
+
+Backend
+●	Node.js
+●	Any framework you are familiar with
+●	MongoDB or Postgres using Neon.com
+
+Documents Required: 
+●	Include a README with steps to run both frontend and backend locally.
+●	Environment variables and database setup must be documented.
