@@ -216,6 +216,10 @@ function AppRoutes({
   }, [currentUserId, setSelectedChat, setUnreadCounts]);
 
   const handleLogout = () => {
+    if (socketRef.current && currentUserId) {
+      socketRef.current.emit('leave');
+    }
+
     setCurrentUser(null);
     setSelectedChat(null);
     setUnreadCounts({});

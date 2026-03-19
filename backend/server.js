@@ -52,6 +52,22 @@ app.set('io', io);
 const onlineUserSocketCounts = new Map();
 const lastSeenByUser = new Map();
 
+const decrementOnlineCount = (userId) => {
+  if (!userId) {
+    return;
+  }
+
+  const id = String(userId);
+  const nextCount = (onlineUserSocketCounts.get(id) || 1) - 1;
+
+  if (nextCount <= 0) {
+    onlineUserSocketCounts.delete(id);
+    lastSeenByUser.set(id, new Date().toISOString());
+  } else {
+    onlineUserSocketCounts.set(id, nextCount);
+  }
+};
+
 const emitPresence = () => {
   const onlineUsers = Array.from(onlineUserSocketCounts.entries())
     .filter(([, count]) => count > 0)
@@ -71,17 +87,38 @@ io.on('connection', (socket) => {
       return;
     }
 
-    socket.join(String(userId));
+    const nextUserId = String(userId);
+    const previousUserId = String(socket.data.userId || '');
 
-    if (socket.data.userId !== String(userId)) {
-      socket.data.userId = String(userId);
+    if (previousUserId && previousUserId !== nextUserId) {
+      decrementOnlineCount(previousUserId);
+      socket.leave(previousUserId);
+    }
+
+    socket.join(nextUserId);
+
+    if (previousUserId !== nextUserId) {
+      socket.data.userId = nextUserId;
       onlineUserSocketCounts.set(
-        String(userId),
-        (onlineUserSocketCounts.get(String(userId)) || 0) + 1,
+        nextUserId,
+        (onlineUserSocketCounts.get(nextUserId) || 0) + 1,
       );
-      lastSeenByUser.delete(String(userId));
+      lastSeenByUser.delete(nextUserId);
       emitPresence();
     }
+  });
+
+  socket.on('leave', () => {
+    const userId = String(socket.data.userId || '');
+
+    if (!userId) {
+      return;
+    }
+
+    decrementOnlineCount(userId);
+    socket.leave(userId);
+    socket.data.userId = undefined;
+    emitPresence();
   });
 
   socket.on('sendMessage', (data) => {
@@ -179,15 +216,7 @@ io.on('connection', (socket) => {
     const userId = socket.data.userId;
 
     if (userId) {
-      const nextCount = (onlineUserSocketCounts.get(userId) || 1) - 1;
-
-      if (nextCount <= 0) {
-        onlineUserSocketCounts.delete(userId);
-        lastSeenByUser.set(userId, new Date().toISOString());
-      } else {
-        onlineUserSocketCounts.set(userId, nextCount);
-      }
-
+      decrementOnlineCount(userId);
       emitPresence();
     }
 
