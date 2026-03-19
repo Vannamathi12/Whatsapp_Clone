@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 
 const ChatWindow = ({
   socket,
@@ -80,7 +81,7 @@ const ChatWindow = ({
       params.set('before', beforeTimestamp);
     }
 
-    const response = await axios.get(`http://localhost:5000/api/messages/${selectedChatId}?${params.toString()}`);
+    const response = await axios.get(`${API_BASE_URL}/api/messages/${selectedChatId}?${params.toString()}`);
     return Array.isArray(response.data) ? response.data : [];
   }, [selectedChatId, currentUserId]);
 
@@ -480,7 +481,7 @@ const ChatWindow = ({
       content: newMessage,
     };
     try {
-      const res = await axios.post('http://localhost:5000/api/messages', messageData);
+      const res = await axios.post(`${API_BASE_URL}/api/messages`, messageData);
       setMessages((prev) => {
         const exists = prev.some((message) => message._id === res.data._id);
 
@@ -542,7 +543,7 @@ const ChatWindow = ({
 
   const handleDeleteMessage = async (messageId) => {
     try {
-      const response = await axios.delete(`http://localhost:5000/api/messages/${messageId}`, {
+      const response = await axios.delete(`${API_BASE_URL}/api/messages/${messageId}`, {
         data: { userId: currentUserId },
       });
 
@@ -575,7 +576,7 @@ const ChatWindow = ({
     }
 
     try {
-      await axios.post(`http://localhost:5000/api/messages/${undoState.messageId}/restore`, {
+      await axios.post(`${API_BASE_URL}/api/messages/${undoState.messageId}/restore`, {
         userId: currentUserId,
       });
 

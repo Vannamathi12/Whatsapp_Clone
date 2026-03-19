@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'r
 import io from 'socket.io-client';
 import axios from 'axios';
 import Login from './components/Login';
+import API_BASE_URL from './config';
 import Register from './components/Register';
 import ChatList from './components/ChatList';
 import ChatWindow from './components/ChatWindow';
@@ -72,7 +73,7 @@ function AppRoutes({
   }, [setLatestMessages]);
 
   useEffect(() => {
-    socketRef.current = io('http://localhost:5000');
+    socketRef.current = io(API_BASE_URL);
 
     return () => {
       if (socketRef.current) {
@@ -175,7 +176,7 @@ function AppRoutes({
 
     const fetchUnreadCounts = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/messages/unread/${currentUserId}`);
+        const response = await axios.get(`${API_BASE_URL}/api/messages/unread/${currentUserId}`);
         setUnreadCounts(response.data?.unreadBySender || {});
       } catch (error) {
         console.error('Failed to fetch unread counts:', error);
@@ -194,7 +195,7 @@ function AppRoutes({
     }
 
     try {
-      await axios.patch('http://localhost:5000/api/messages/read', {
+      await axios.patch(`${API_BASE_URL}/api/messages/read`, {
         receiverId: currentUserId,
         senderId: user._id,
       });

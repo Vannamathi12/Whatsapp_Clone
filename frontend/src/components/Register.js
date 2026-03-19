@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 
 const Register = ({ onRegister }) => {
   const [username, setUsername] = useState('');
@@ -18,8 +19,8 @@ const Register = ({ onRegister }) => {
     };
 
     try {
-      await axios.post('http://localhost:5000/api/users/register', payload);
-      const loginResponse = await axios.post('http://localhost:5000/api/users/login', {
+      await axios.post(`${API_BASE_URL}/api/users/register`, payload);
+      const loginResponse = await axios.post(`${API_BASE_URL}/api/users/login`, {
         username: payload.username,
         password: payload.password,
       });
@@ -27,7 +28,7 @@ const Register = ({ onRegister }) => {
       setError('');
     } catch (err) {
       if (!err.response) {
-        setError('Cannot reach backend API. Start backend on http://localhost:5000.');
+        setError('Cannot reach backend API. Ensure the backend server is running.');
       } else {
         setError(err.response?.data?.error || 'Registration failed');
       }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 
 const Login = ({ onLogin }) => {
   const [username, setUsername] = useState('');
@@ -10,12 +11,12 @@ const Login = ({ onLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/users/login', { username, password });
+      const res = await axios.post(`${API_BASE_URL}/api/users/login`, { username, password });
       onLogin(res.data.user);
       setError('');
     } catch (err) {
       if (!err.response) {
-        setError('Cannot reach backend API. Start backend on http://localhost:5000.');
+        setError('Cannot reach backend API. Ensure the backend server is running.');
       } else {
         setError(err.response?.data?.error || 'Invalid credentials');
       }

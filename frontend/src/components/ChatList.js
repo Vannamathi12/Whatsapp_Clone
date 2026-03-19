@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 
 const ChatList = ({
   onSelectChat,
@@ -16,7 +17,7 @@ const ChatList = ({
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/users');
+        const res = await axios.get(`${API_BASE_URL}/api/users`);
         setUsers(res.data.filter(user => user.username !== currentUser.username));
       } catch (err) {
         console.error('Error fetching users:', err);
