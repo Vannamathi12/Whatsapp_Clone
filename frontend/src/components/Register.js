@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 const Register = ({ onRegister }) => {
@@ -9,26 +10,42 @@ const Register = ({ onRegister }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const payload = {
+      username: username.trim(),
+      email: email.trim().toLowerCase(),
+      password,
+    };
+
     try {
-      await axios.post('http://localhost:5000/api/users/register', { username, email, password });
-      onRegister();
+      await axios.post('http://localhost:5000/api/users/register', payload);
+      const loginResponse = await axios.post('http://localhost:5000/api/users/login', {
+        username: payload.username,
+        password: payload.password,
+      });
+      onRegister(loginResponse.data.user);
       setError('');
     } catch (err) {
-      setError('Registration failed');
+      if (!err.response) {
+        setError('Cannot reach backend API. Start backend on http://localhost:5000.');
+      } else {
+        setError(err.response?.data?.error || 'Registration failed');
+      }
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md w-80">
-        <h2 className="text-2xl mb-4">Register</h2>
-        {error && <p className="text-red-500 mb-4">{error}</p>}
+    <div className="auth-page">
+      <form onSubmit={handleSubmit} className="auth-card">
+        <h2 className="auth-title">Create account</h2>
+        <p className="auth-subtitle">Join your team chat with a new profile.</p>
+        {error && <p className="auth-error">{error}</p>}
         <input
           type="text"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="w-full p-2 mb-4 border rounded"
+          className="auth-input"
           required
         />
         <input
@@ -36,7 +53,7 @@ const Register = ({ onRegister }) => {
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 mb-4 border rounded"
+          className="auth-input"
           required
         />
         <input
@@ -44,10 +61,16 @@ const Register = ({ onRegister }) => {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 mb-4 border rounded"
+          className="auth-input"
           required
         />
-        <button type="submit" className="w-full bg-green-500 text-white p-2 rounded">Register</button>
+        <button type="submit" className="auth-submit">Register</button>
+        <div className="auth-switch">
+          <span>Already have an account? </span>
+          <Link to="/login" className="auth-link">
+            Login
+          </Link>
+        </div>
       </form>
     </div>
   );

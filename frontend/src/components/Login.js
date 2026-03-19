@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 const Login = ({ onLogin }) => {
@@ -13,21 +14,26 @@ const Login = ({ onLogin }) => {
       onLogin(res.data.user);
       setError('');
     } catch (err) {
-      setError('Invalid credentials');
+      if (!err.response) {
+        setError('Cannot reach backend API. Start backend on http://localhost:5000.');
+      } else {
+        setError(err.response?.data?.error || 'Invalid credentials');
+      }
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md w-80">
-        <h2 className="text-2xl mb-4">Login</h2>
-        {error && <p className="text-red-500 mb-4">{error}</p>}
+    <div className="auth-page">
+      <form onSubmit={handleSubmit} className="auth-card">
+        <h2 className="auth-title">Welcome back</h2>
+        <p className="auth-subtitle">Sign in to continue your conversations.</p>
+        {error && <p className="auth-error">{error}</p>}
         <input
           type="text"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="w-full p-2 mb-4 border rounded"
+          className="auth-input"
           required
         />
         <input
@@ -35,10 +41,16 @@ const Login = ({ onLogin }) => {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 mb-4 border rounded"
+          className="auth-input"
           required
         />
-        <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded">Login</button>
+        <button type="submit" className="auth-submit">Login</button>
+        <div className="auth-switch">
+          <span>Don't have an account? </span>
+          <Link to="/register" className="auth-link">
+            Register
+          </Link>
+        </div>
       </form>
     </div>
   );

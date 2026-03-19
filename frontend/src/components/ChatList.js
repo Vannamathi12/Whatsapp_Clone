@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const ChatList = ({ onSelectChat, currentUser }) => {
+const ChatList = ({
+  onSelectChat,
+  currentUser,
+  onLogout,
+  selectedChat,
+  unreadCounts,
+  onlineUsers,
+  lastSeenMap,
+  latestMessages,
+}) => {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
@@ -16,21 +25,110 @@ const ChatList = ({ onSelectChat, currentUser }) => {
     if (currentUser) fetchUsers();
   }, [currentUser]);
 
+  const formatLastSeen = (userId) => {
+    const value = lastSeenMap?.[userId];
+
+    if (!value) {
+      return 'offline';
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return 'offline';
+    }
+
+    return `last seen ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
+  const formatPreviewTimestamp = (message) => {
+    const dateValue = message?.timestamp || message?.createdAt;
+
+    if (!dateValue) {
+      return '';
+    }
+
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const sortedUsers = [...users].sort((a, b) => {
+    const aTimestamp = new Date(latestMessages[a._id]?.timestamp || latestMessages[a._id]?.createdAt || 0).getTime();
+    const bTimestamp = new Date(latestMessages[b._id]?.timestamp || latestMessages[b._id]?.createdAt || 0).getTime();
+
+    if (bTimestamp !== aTimestamp) {
+      return bTimestamp - aTimestamp;
+    }
+
+    return a.username.localeCompare(b.username);
+  });
+
   return (
-    <div className="w-1/3 bg-gray-200 p-4">
-      <h3 className="text-lg font-bold mb-4">Chats</h3>
-      <ul>
-        {users.map(user => (
+    <aside className="chat-sidebar">
+      <div className="chat-sidebar-header">
+        <div className="chat-row-main">
+          <span className="avatar-initials own">
+            {currentUser.username.slice(0, 2).toUpperCase()}
+          </span>
+          <div>
+            <p className="chat-sidebar-user">Signed in as</p>
+            <h3 className="chat-sidebar-name">{currentUser.username}</h3>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onLogout}
+          className="btn-logout"
+        >
+          Logout
+        </button>
+      </div>
+      <h4 className="chat-list-title">Chats</h4>
+      <ul className="chat-list">
+        {sortedUsers.map(user => (
           <li
             key={user._id}
             onClick={() => onSelectChat(user)}
-            className="p-2 mb-2 bg-white rounded cursor-pointer hover:bg-gray-100"
+            className={`chat-item ${selectedChat?._id === user._id ? 'active' : ''}`}
           >
-            {user.username}
+            <div className="chat-row">
+              <div className="chat-row-main">
+                <div className="avatar-wrapper">
+                  <span className="avatar-initials">
+                    {user.username.slice(0, 2).toUpperCase()}
+                  </span>
+                  <span
+                    className={`avatar-status-dot ${onlineUsers.includes(user._id) ? 'online' : 'offline'}`}
+                  />
+                </div>
+                <div>
+                  <div className="chat-username">{user.username}</div>
+                  <div className="chat-preview">
+                    {latestMessages[user._id]?.content || 'No messages yet'}
+                  </div>
+                  <div className="chat-meta">
+                    {onlineUsers.includes(user._id) ? 'online' : formatLastSeen(user._id)}
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="chat-time">
+                  {formatPreviewTimestamp(latestMessages[user._id])}
+                </span>
+                {(unreadCounts[user._id] || 0) > 0 && (
+                  <span className="unread-pill">
+                    {unreadCounts[user._id]}
+                  </span>
+                )}
+              </div>
+            </div>
           </li>
         ))}
       </ul>
-    </div>
+    </aside>
   );
 };
 

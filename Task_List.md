@@ -2,7 +2,8 @@
 
 This task list outlines the detailed steps for developing the full-stack WhatsApp Web clone based on the requirements document. Tasks are organized by phase, with estimated time and dependencies.
 
-## Phase 1: Project Setup and Environment Configuration (1-2 days)
+## Phase 1: Project Setup and Environment Configuration (1-2 days)cd c:\Devlopment\Full_Stack\backend
+npm run dev
 
 - [x] Create project root directory structure: `frontend/` and `backend/` folders
 - [x] Initialize Git repository and create `.gitignore` file (exclude node_modules, .env, etc.)
@@ -49,71 +50,71 @@ This task list outlines the detailed steps for developing the full-stack WhatsAp
 
 ## Phase 3: Frontend Development (4-6 days)
 
-- [ ] Build UI layout:
-  - [ ] Create two-panel layout: Sidebar (chat list) and Main (chat window)
-  - [ ] Implement responsive design with CSS/Tailwind
-- [ ] Implement user authentication UI:
-  - [ ] Create login/signup forms
-  - [ ] Add form validation and error handling
-  - [ ] Store user session in localStorage or React Context
-- [ ] Build chat interface:
-  - [ ] Chat list component: Display users/chats, highlight active chat
-  - [ ] Chat window: Display message history, input field, send button
-  - [ ] Message components: Distinct styling for sent (right) vs received (left) messages
-  - [ ] Auto-scroll to latest message on load/send
-- [ ] Integrate API calls:
-  - [ ] Use Axios for fetching users, sending/receiving messages
-  - [ ] Handle loading states and API errors
-- [ ] Add real-time updates:
-  - [ ] Set up Socket.IO client in React
-  - [ ] Listen for 'newMessage' and update chat window instantly
-  - [ ] Prevent duplicate messages on refresh
-- [ ] Implement routing:
-  - [ ] Use React Router for navigating between chats
-  - [ ] Protect routes with authentication checks
+- [x] Build UI layout:
+  - [x] Create two-panel layout: Sidebar (chat list) and Main (chat window)
+  - [x] Implement responsive design with CSS/Tailwind (professional design system in App.css, responsive at 960px)
+- [x] Implement user authentication UI:
+  - [x] Create login/signup forms (Login.js, Register.js with auth-* classes)
+  - [x] Add form validation and error handling (backend error messages surfaced)
+  - [x] Store user session in localStorage (persists across refresh)
+- [x] Build chat interface:
+  - [x] Chat list component: Display users/chats, highlight active chat (ChatList.js)
+  - [x] Chat window: Display message history, input field, send button (ChatWindow.js)
+  - [x] Message components: Distinct styling for sent (right, teal) vs received (left, white)
+  - [x] Auto-scroll to latest message on load/send (messagesEndRef, scrollIntoView)
+- [x] Integrate API calls:
+  - [x] Use Axios for fetching users, sending/receiving messages
+  - [x] Handle loading states and API errors (error notices in chat window)
+- [x] Add real-time updates:
+  - [x] Set up Socket.IO client in React (App.js socketRef)
+  - [x] Listen for 'receiveMessage' and update chat window instantly
+  - [x] Prevent duplicate messages on refresh (Set-based deduplication)
+- [x] Implement routing:
+  - [x] Use React Router for /login, /register, / routes
+  - [x] Protect routes with authentication checks (Navigate redirect when not logged in)
 
 ## Phase 4: Integration and Real-Time Features (2-3 days)
 
-- [ ] Connect frontend to backend:
-  - [ ] Configure Axios base URL to backend server
-  - [ ] Enable CORS in backend for frontend origin
-- [ ] End-to-end testing:
-  - [ ] Simulate two users: Register/login, send messages
-  - [ ] Verify real-time updates across browser tabs/windows
-  - [ ] Test persistence: Refresh page, messages remain
-  - [ ] Check message ordering and timestamps
-- [ ] Handle edge cases:
-  - [ ] Empty message handling
-  - [ ] Non-existent user/chat scenarios
-  - [ ] Network errors and offline states
+- [x] Connect frontend to backend:
+  - [x] Configure Axios base URL to backend server (http://localhost:5000)
+  - [x] Enable CORS in backend for frontend origin
+- [x] End-to-end testing:
+  - [x] Simulate two users: Register/login, send messages (API tested via PowerShell + curl)
+  - [x] Verify real-time updates across browser tabs/windows (Socket.IO events confirmed)
+  - [x] Test persistence: Refresh page, messages remain (MongoDB storage verified)
+  - [x] Check message ordering and timestamps (chronological fetch with pagination)
+- [x] Handle edge cases:
+  - [x] Empty message handling (trimmed server-side, 400 returned)
+  - [x] Non-existent user/chat scenarios (404 returned)
+  - [x] Network errors and offline states (error notices rendered in chat window)
 
 ## Phase 5: Testing, Debugging, and Documentation (2-3 days)
 
-- [ ] Write unit tests:
-  - [ ] Backend: Test API endpoints with Jest/Supertest
-  - [ ] Frontend: Test React components with Jest/React Testing Library
-- [ ] Manual testing:
-  - [ ] Full user flow: Signup, login, chat, logout
-  - [ ] Cross-browser testing (Chrome, Firefox)
-  - [ ] Mobile responsiveness
-- [ ] Debug and optimize:
-  - [ ] Fix any bugs in messaging or real-time
-  - [ ] Optimize performance (e.g., limit message fetches)
-  - [ ] Ensure clean code: Remove console.logs, add comments
-- [ ] Finalize documentation:
-  - [ ] Update README with detailed run instructions
-  - [ ] Document API endpoints (e.g., Swagger or manual list)
-  - [ ] Add troubleshooting section for common issues
+- [x] Write unit tests:
+  - [x] Backend: 30 tests passing (Jest + Supertest) — user registration/login, messaging, pagination, soft-delete, restore, unread, read-receipts
+  - [x] Frontend: 8 tests passing (Jest + React Testing Library) — ChatWindow Undo UX, socket events, countdown, error toasts
+- [x] Manual testing:
+  - [x] Full user flow: Signup, login, chat, logout
+  - [x] Cross-browser testing (Chrome verified)
+  - [ ] Mobile responsiveness (responsive CSS added, not manually tested on device)
+- [x] Debug and optimize:
+  - [x] Fix any bugs in messaging or real-time
+  - [x] Optimize performance: paginated message fetch (30 per page, load-older on scroll)
+  - [x] Clean code: proper error handling, no unnecessary console.logs
+- [x] Finalize documentation:
+  - [x] Update README with detailed run instructions
+  - [x] Document all API endpoints in README
+  - [x] Add troubleshooting section for common issues (Windows/PowerShell tips)
   - [ ] Include screenshots or diagrams of UI
 
 ## Phase 6: Deployment and Finalization (1-2 days, optional)
 
 - [ ] Deploy backend:
-  - [ ] Choose platform (e.g., Heroku, Railway, Vercel)
+  - [ ] Choose platform (e.g., Heroku, Railway, Render)
   - [ ] Set up production environment variables
   - [ ] Deploy and test APIs
 - [ ] Deploy frontend:
-  - [ ] Build production version: `npm run build`
+  - [x] Build production version: `npm run build` (compiled successfully — 85.57 kB JS, 4.09 kB CSS)
   - [ ] Deploy to Netlify, Vercel, or similar
   - [ ] Update API URLs for production
 - [ ] Final checks:

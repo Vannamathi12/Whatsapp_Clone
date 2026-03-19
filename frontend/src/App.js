@@ -1,40 +1,336 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import io from 'socket.io-client';
+import axios from 'axios';
 import Login from './components/Login';
 import Register from './components/Register';
 import ChatList from './components/ChatList';
 import ChatWindow from './components/ChatWindow';
 import './App.css';
 
-function App() {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [selectedChat, setSelectedChat] = useState(null);
+function AppRoutes({
+  currentUser,
+  setCurrentUser,
+  selectedChat,
+  setSelectedChat,
+  unreadCounts,
+  setUnreadCounts,
+  onlineUsers,
+  setOnlineUsers,
+  lastSeenMap,
+  setLastSeenMap,
+  latestMessages,
+  setLatestMessages,
+}) {
+  const navigate = useNavigate();
+  const socketRef = useRef(null);
+  const typingTimeoutsRef = useRef({});
+  const [typingBySender, setTypingBySender] = useState({});
 
-  const handleLogin = (user) => {
-    setCurrentUser(user);
+  const currentUserId = String(currentUser?.id || currentUser?._id || '');
+  const selectedChatId = String(selectedChat?._id || selectedChat?.id || '');
+
+  const handlePresenceUpdate = useCallback((payload) => {
+    const nextOnlineUsers = Array.isArray(payload) ? payload : payload?.onlineUsers || [];
+    const nextLastSeenMap = Array.isArray(payload) ? {} : payload?.lastSeen || {};
+
+    setOnlineUsers(nextOnlineUsers);
+    setLastSeenMap(nextLastSeenMap);
+  }, [setOnlineUsers, setLastSeenMap]);
+
+  const handleIncomingMessage = useCallback((message) => {
+    const senderId = typeof message.sender === 'object' ? message.sender?._id : message.sender;
+
+    if (!senderId) {
+      return;
+    }
+
+    setLatestMessages((prev) => ({
+      ...prev,
+      [senderId]: message,
+    }));
+
+    if (selectedChat?._id === senderId) {
+      return;
+    }
+
+    setUnreadCounts((prev) => ({
+      ...prev,
+      [senderId]: (prev[senderId] || 0) + 1,
+    }));
+  }, [selectedChat, setLatestMessages, setUnreadCounts]);
+
+  const handleConversationActivity = useCallback((otherUserId, message) => {
+    if (!otherUserId || !message) {
+      return;
+    }
+
+    setLatestMessages((prev) => ({
+      ...prev,
+      [otherUserId]: message,
+    }));
+  }, [setLatestMessages]);
+
+  useEffect(() => {
+    socketRef.current = io('http://localhost:5000');
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+      Object.values(typingTimeoutsRef.current).forEach((timeoutId) => {
+        clearTimeout(timeoutId);
+      });
+      typingTimeoutsRef.current = {};
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!socketRef.current || !currentUserId) {
+      return;
+    }
+
+    socketRef.current.emit('join', currentUserId);
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (!socketRef.current || !currentUserId) {
+      return;
+    }
+
+    const clearTypingForSender = (fromId) => {
+      setTypingBySender((prev) => {
+        if (!prev[fromId]) {
+          return prev;
+        }
+
+        const next = { ...prev };
+        delete next[fromId];
+        return next;
+      });
+    };
+
+    const handleTyping = (data) => {
+      const fromId = String(data?.from || '');
+      const toId = String(data?.to || '');
+
+      if (!fromId || fromId === currentUserId) {
+        return;
+      }
+
+      if (toId && toId !== currentUserId) {
+        return;
+      }
+
+      setTypingBySender((prev) => ({
+        ...prev,
+        [fromId]: data?.username || 'User',
+      }));
+
+      if (typingTimeoutsRef.current[fromId]) {
+        clearTimeout(typingTimeoutsRef.current[fromId]);
+      }
+
+      typingTimeoutsRef.current[fromId] = setTimeout(() => {
+        clearTypingForSender(fromId);
+      }, 2500);
+    };
+
+    const handleStopTyping = (data) => {
+      const fromId = String(data?.from || '');
+      const toId = String(data?.to || '');
+
+      if (!fromId) {
+        return;
+      }
+
+      if (toId && toId !== currentUserId) {
+        return;
+      }
+
+      if (typingTimeoutsRef.current[fromId]) {
+        clearTimeout(typingTimeoutsRef.current[fromId]);
+        delete typingTimeoutsRef.current[fromId];
+      }
+
+      clearTypingForSender(fromId);
+    };
+
+    socketRef.current.on('typing', handleTyping);
+    socketRef.current.on('stopTyping', handleStopTyping);
+
+    return () => {
+      socketRef.current?.off('typing', handleTyping);
+      socketRef.current?.off('stopTyping', handleStopTyping);
+    };
+  }, [currentUserId]);
+
+  const activeTypingUser = selectedChatId ? typingBySender[selectedChatId] : '';
+
+  useEffect(() => {
+    if (!currentUserId) {
+      setUnreadCounts({});
+      return;
+    }
+
+    const fetchUnreadCounts = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/api/messages/unread/${currentUserId}`);
+        setUnreadCounts(response.data?.unreadBySender || {});
+      } catch (error) {
+        console.error('Failed to fetch unread counts:', error);
+      }
+    };
+
+    fetchUnreadCounts();
+  }, [currentUserId, setUnreadCounts]);
+
+  const handleSelectChat = useCallback(async (user) => {
+    setSelectedChat(user);
+    setUnreadCounts((prev) => ({ ...prev, [user._id]: 0 }));
+
+    if (!currentUserId || !user?._id) {
+      return;
+    }
+
+    try {
+      await axios.patch('http://localhost:5000/api/messages/read', {
+        receiverId: currentUserId,
+        senderId: user._id,
+      });
+    } catch (error) {
+      console.error('Failed to sync read status:', error);
+    }
+  }, [currentUserId, setSelectedChat, setUnreadCounts]);
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setSelectedChat(null);
+    setUnreadCounts({});
+    setOnlineUsers([]);
+    setLastSeenMap({});
+    setLatestMessages({});
+    navigate('/login');
   };
-
-  const handleRegister = () => {
-    // Redirect to login or show message
-  };
-
-  if (!currentUser) {
-    return (
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login onLogin={handleLogin} />} />
-          <Route path="/register" element={<Register onRegister={handleRegister} />} />
-          <Route path="*" element={<Navigate to="/login" />} />
-        </Routes>
-      </Router>
-    );
-  }
 
   return (
-    <div className="flex h-screen">
-      <ChatList onSelectChat={setSelectedChat} currentUser={currentUser} />
-      <ChatWindow selectedChat={selectedChat} currentUser={currentUser} />
-    </div>
+    <Routes>
+      <Route
+        path="/login"
+        element={
+          currentUser ? (
+            <Navigate to="/" replace />
+          ) : (
+            <Login
+              onLogin={(user) => {
+                setCurrentUser(user);
+                navigate('/');
+              }}
+            />
+          )
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          currentUser ? (
+            <Navigate to="/" replace />
+          ) : (
+            <Register
+              onRegister={(user) => {
+                setCurrentUser(user);
+                navigate('/');
+              }}
+            />
+          )
+        }
+      />
+      <Route
+        path="/*"
+        element={
+          currentUser ? (
+            <div className="app-shell">
+              <ChatList
+                onSelectChat={handleSelectChat}
+                currentUser={currentUser}
+                onLogout={handleLogout}
+                selectedChat={selectedChat}
+                unreadCounts={unreadCounts}
+                onlineUsers={onlineUsers}
+                lastSeenMap={lastSeenMap}
+                latestMessages={latestMessages}
+              />
+              <ChatWindow
+                socket={socketRef.current}
+                selectedChat={selectedChat}
+                currentUser={currentUser}
+                activeTypingUser={activeTypingUser}
+                onIncomingMessage={handleIncomingMessage}
+                onPresenceUpdate={handlePresenceUpdate}
+                onConversationActivity={handleConversationActivity}
+                onlineUsers={onlineUsers}
+                lastSeenMap={lastSeenMap}
+              />
+            </div>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+    </Routes>
+  );
+}
+
+function App() {
+  const [currentUser, setCurrentUser] = useState(() => {
+    const storedUser = localStorage.getItem('currentUser');
+
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+  const [selectedChat, setSelectedChat] = useState(() => {
+    const storedChat = localStorage.getItem('selectedChat');
+
+    return storedChat ? JSON.parse(storedChat) : null;
+  });
+  const [unreadCounts, setUnreadCounts] = useState({});
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [lastSeenMap, setLastSeenMap] = useState({});
+  const [latestMessages, setLatestMessages] = useState({});
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('selectedChat');
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (selectedChat) {
+      localStorage.setItem('selectedChat', JSON.stringify(selectedChat));
+    } else {
+      localStorage.removeItem('selectedChat');
+    }
+  }, [selectedChat]);
+
+  return (
+    <Router>
+      <AppRoutes
+        currentUser={currentUser}
+        setCurrentUser={setCurrentUser}
+        selectedChat={selectedChat}
+        setSelectedChat={setSelectedChat}
+        unreadCounts={unreadCounts}
+        setUnreadCounts={setUnreadCounts}
+        onlineUsers={onlineUsers}
+        setOnlineUsers={setOnlineUsers}
+        lastSeenMap={lastSeenMap}
+        setLastSeenMap={setLastSeenMap}
+        latestMessages={latestMessages}
+        setLatestMessages={setLatestMessages}
+      />
+    </Router>
   );
 }
 
