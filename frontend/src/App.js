@@ -32,8 +32,9 @@ function AppRoutes({
   const selectedChatId = String(selectedChat?._id || selectedChat?.id || '');
 
   const handlePresenceUpdate = useCallback((payload) => {
-    const nextOnlineUsers = Array.isArray(payload) ? payload : payload?.onlineUsers || [];
+    const nextOnlineUsersRaw = Array.isArray(payload) ? payload : payload?.onlineUsers || [];
     const nextLastSeenMap = Array.isArray(payload) ? {} : payload?.lastSeen || {};
+    const nextOnlineUsers = nextOnlineUsersRaw.map((userId) => String(userId));
 
     setOnlineUsers(nextOnlineUsers);
     setLastSeenMap(nextLastSeenMap);
@@ -91,8 +92,18 @@ function AppRoutes({
       return;
     }
 
+    const handlePresenceEvent = (payload) => {
+      handlePresenceUpdate(payload);
+    };
+
+    socketRef.current.on('presence:update', handlePresenceEvent);
+
     socketRef.current.emit('join', currentUserId);
-  }, [currentUserId]);
+
+    return () => {
+      socketRef.current?.off('presence:update', handlePresenceEvent);
+    };
+  }, [currentUserId, handlePresenceUpdate]);
 
   useEffect(() => {
     if (!socketRef.current || !currentUserId) {
@@ -267,7 +278,6 @@ function AppRoutes({
                 currentUser={currentUser}
                 activeTypingUser={activeTypingUser}
                 onIncomingMessage={handleIncomingMessage}
-                onPresenceUpdate={handlePresenceUpdate}
                 onConversationActivity={handleConversationActivity}
                 onlineUsers={onlineUsers}
                 lastSeenMap={lastSeenMap}

@@ -13,6 +13,7 @@ const ChatList = ({
   latestMessages,
 }) => {
   const [users, setUsers] = useState([]);
+  const onlineUserIds = new Set((onlineUsers || []).map((userId) => String(userId)));
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -102,7 +103,7 @@ const ChatList = ({
                     {user.username.slice(0, 2).toUpperCase()}
                   </span>
                   <span
-                    className={`avatar-status-dot ${onlineUsers.includes(user._id) ? 'online' : 'offline'}`}
+                    className={`avatar-status-dot ${onlineUserIds.has(String(user._id)) ? 'online' : 'offline'}`}
                   />
                 </div>
                 <div>
@@ -111,7 +112,7 @@ const ChatList = ({
                     {latestMessages[user._id]?.content || 'No messages yet'}
                   </div>
                   <div className="chat-meta">
-                    {onlineUsers.includes(user._id) ? 'online' : formatLastSeen(user._id)}
+                    {onlineUserIds.has(String(user._id)) ? 'online' : formatLastSeen(user._id)}
                   </div>
                 </div>
               </div>

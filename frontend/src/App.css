@@ -415,12 +415,13 @@ body,
 .message-row {
   display: flex;
   align-items: flex-start;
+  justify-content: flex-start;
   gap: 8px;
   margin-bottom: 10px;
 }
 
 .message-row.own {
-  flex-direction: row-reverse;
+  justify-content: flex-end;
 }
 
 .message-bubble {

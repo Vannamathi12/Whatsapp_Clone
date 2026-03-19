@@ -8,7 +8,6 @@ const ChatWindow = ({
   currentUser,
   activeTypingUser,
   onIncomingMessage,
-  onPresenceUpdate,
   onConversationActivity,
   onlineUsers,
   lastSeenMap,
@@ -24,6 +23,7 @@ const ChatWindow = ({
   const [actionMenuMessageId, setActionMenuMessageId] = useState(null);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [currentStickyDate, setCurrentStickyDate] = useState('');
+  const [isStickyDateVisible, setIsStickyDateVisible] = useState(false);
   const [undoState, setUndoState] = useState(null);
   const [undoNowTs, setUndoNowTs] = useState(Date.now());
   const [restoreError, setRestoreError] = useState('');
@@ -38,6 +38,7 @@ const ChatWindow = ({
 
   const currentUserId = String(currentUser?.id || currentUser?._id || '');
   const selectedChatId = String(selectedChat?._id || selectedChat?.id || '');
+  const onlineUserIds = new Set((onlineUsers || []).map((userId) => String(userId)));
 
   const getUserId = (value) => String((typeof value === 'object' ? value?._id || value?.id : value) || '');
 
@@ -166,6 +167,7 @@ const ChatWindow = ({
   const handleMessageListScroll = useCallback((event) => {
     const scrollElement = event.currentTarget;
     const distanceFromBottom = scrollElement.scrollHeight - scrollElement.scrollTop - scrollElement.clientHeight;
+    setIsStickyDateVisible(scrollElement.scrollTop > 24);
 
     const messageElements = Array.from(scrollElement.querySelectorAll('[data-date-label]'));
     let stickyLabel = '';
@@ -314,22 +316,6 @@ const ChatWindow = ({
   }, [selectedChatId]);
 
   useEffect(() => {
-    if (!socket) {
-      return;
-    }
-
-    const handlePresenceUpdate = (users) => {
-      onPresenceUpdate?.(users);
-    };
-
-    socket.on('presence:update', handlePresenceUpdate);
-
-    return () => {
-      socket.off('presence:update', handlePresenceUpdate);
-    };
-  }, [socket, onPresenceUpdate]);
-
-  useEffect(() => {
     const scrollElement = scrollContainerRef.current;
 
     if (pendingScrollRestoreRef.current && scrollElement) {
@@ -368,6 +354,7 @@ const ChatWindow = ({
   useEffect(() => {
     // Reset sticky date when chat changes
     setCurrentStickyDate('');
+    setIsStickyDateVisible(false);
   }, [selectedChatId]);
 
   useEffect(() => {
@@ -470,6 +457,7 @@ const ChatWindow = ({
     }
 
     setCurrentStickyDate(stickyLabel);
+    setIsStickyDateVisible(scrollElement.scrollTop > 24);
   }, [messages, searchQuery, selectedChatId]);
 
   const handleSend = async () => {
@@ -797,7 +785,7 @@ const ChatWindow = ({
             <div>
               <h3 className="chat-title">{selectedChat.username}</h3>
               <p className="chat-header-status">
-                {(onlineUsers || []).includes(selectedChatId)
+                {onlineUserIds.has(selectedChatId)
                   ? 'online'
                   : lastSeenMap?.[selectedChatId]
                     ? `last seen ${new Date(lastSeenMap[selectedChatId]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
@@ -860,7 +848,7 @@ const ChatWindow = ({
         </div>
       </div>
       <div ref={scrollContainerRef} onScroll={handleMessageListScroll} className="chat-scroll-area">
-        {currentStickyDate && (
+        {isStickyDateVisible && currentStickyDate && (
           <div className="sticky top-0 left-0 right-0 z-10 mb-4 flex items-center justify-center bg-white bg-opacity-95 py-2">
             <span className="date-chip">
               {currentStickyDate}
@@ -908,7 +896,7 @@ const ChatWindow = ({
               data-date-label={dividerLabel || ''}
               className={`message-row ${isOwnMessage ? 'own' : ''}`}
             >
-              <div className="flex-1">
+              <div className={`flex flex-1 flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
                 <span
                   className={`message-bubble ${isOwnMessage ? 'own' : ''} ${isDeleted ? 'deleted' : ''} ${isActiveSearchMatch ? 'active' : ''}`}
                 >
