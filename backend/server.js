@@ -52,6 +52,27 @@ app.set('io', io);
 const onlineUserSocketCounts = new Map();
 const lastSeenByUser = new Map();
 
+const rebuildOnlineCountsFromSockets = () => {
+  const freshCounts = new Map();
+
+  for (const socket of io.of('/').sockets.values()) {
+    const userId = String(socket.data?.userId || '');
+
+    if (!userId) {
+      continue;
+    }
+
+    freshCounts.set(userId, (freshCounts.get(userId) || 0) + 1);
+  }
+
+  onlineUserSocketCounts.clear();
+  freshCounts.forEach((count, userId) => {
+    onlineUserSocketCounts.set(userId, count);
+  });
+
+  return freshCounts;
+};
+
 const decrementOnlineCount = (userId) => {
   if (!userId) {
     return;
@@ -69,9 +90,12 @@ const decrementOnlineCount = (userId) => {
 };
 
 const emitPresence = () => {
-  const onlineUsers = Array.from(onlineUserSocketCounts.entries())
-    .filter(([, count]) => count > 0)
-    .map(([userId]) => userId);
+  const freshCounts = rebuildOnlineCountsFromSockets();
+  const onlineUsers = Array.from(freshCounts.keys());
+
+  onlineUsers.forEach((userId) => {
+    lastSeenByUser.delete(userId);
+  });
 
   io.emit('presence:update', {
     onlineUsers,
@@ -104,8 +128,9 @@ io.on('connection', (socket) => {
         (onlineUserSocketCounts.get(nextUserId) || 0) + 1,
       );
       lastSeenByUser.delete(nextUserId);
-      emitPresence();
     }
+
+    emitPresence();
   });
 
   socket.on('leave', () => {
