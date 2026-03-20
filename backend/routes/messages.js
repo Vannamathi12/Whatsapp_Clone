@@ -151,6 +151,32 @@ router.get('/:chatId', async (req, res) => {
   }
 });
 
+// Delete entire conversation for current user and the selected user.
+router.delete('/conversation/:otherUserId', async (req, res) => {
+  try {
+    const { otherUserId } = req.params;
+    const currentUserId = String(req.body?.currentUserId || '');
+
+    if (!otherUserId || !currentUserId) {
+      return res.status(400).json({ error: 'otherUserId and currentUserId are required' });
+    }
+
+    const result = await Message.deleteMany({
+      $or: [
+        { sender: currentUserId, receiver: otherUserId },
+        { sender: otherUserId, receiver: currentUserId },
+      ],
+    });
+
+    return res.json({
+      success: true,
+      deletedCount: result.deletedCount || 0,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Soft delete a message
 router.delete('/:messageId', async (req, res) => {
   try {

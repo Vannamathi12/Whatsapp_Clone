@@ -4,6 +4,8 @@ import API_BASE_URL from '../config';
 
 const ChatList = ({
   onSelectChat,
+  onDeleteChat,
+  onDeleteUser,
   currentUser,
   onLogout,
   selectedChat,
@@ -13,6 +15,7 @@ const ChatList = ({
   latestMessages,
 }) => {
   const [users, setUsers] = useState([]);
+  const [actionBusyUserId, setActionBusyUserId] = useState('');
   const onlineUserIds = new Set((onlineUsers || []).map((userId) => String(userId)));
 
   useEffect(() => {
@@ -67,6 +70,57 @@ const ChatList = ({
 
     return a.username.localeCompare(b.username);
   });
+
+  const handleDeleteChat = async (event, user) => {
+    event.stopPropagation();
+
+    if (actionBusyUserId) {
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete all chat history with ${user.username}?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    setActionBusyUserId(String(user._id));
+
+    try {
+      await onDeleteChat?.(user);
+    } catch (error) {
+      alert(error?.response?.data?.error || 'Failed to delete chat history');
+    } finally {
+      setActionBusyUserId('');
+    }
+  };
+
+  const handleDeleteUser = async (event, user) => {
+    event.stopPropagation();
+
+    if (actionBusyUserId) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete user ${user.username} and all related messages? This cannot be undone.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setActionBusyUserId(String(user._id));
+
+    try {
+      await onDeleteUser?.(user);
+      setUsers((prev) => prev.filter((entry) => String(entry._id) !== String(user._id)));
+    } catch (error) {
+      alert(error?.response?.data?.error || 'Failed to delete user');
+    } finally {
+      setActionBusyUserId('');
+    }
+  };
 
   return (
     <aside className="chat-sidebar">
@@ -125,6 +179,24 @@ const ChatList = ({
                     {unreadCounts[user._id]}
                   </span>
                 )}
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(event) => handleDeleteChat(event, user)}
+                    className="chat-btn"
+                    disabled={actionBusyUserId === String(user._id)}
+                  >
+                    Delete Chat
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(event) => handleDeleteUser(event, user)}
+                    className="chat-btn"
+                    disabled={actionBusyUserId === String(user._id)}
+                  >
+                    Delete User
+                  </button>
+                </div>
               </div>
             </div>
           </li>
