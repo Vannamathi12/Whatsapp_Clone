@@ -5,7 +5,6 @@ import API_BASE_URL from '../config';
 const ChatList = ({
   onSelectChat,
   onDeleteChat,
-  onDeleteUser,
   currentUser,
   onLogout,
   selectedChat,
@@ -95,33 +94,6 @@ const ChatList = ({
     }
   };
 
-  const handleDeleteUser = async (event, user) => {
-    event.stopPropagation();
-
-    if (actionBusyUserId) {
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Delete user ${user.username} and all related messages? This cannot be undone.`,
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    setActionBusyUserId(String(user._id));
-
-    try {
-      await onDeleteUser?.(user);
-      setUsers((prev) => prev.filter((entry) => String(entry._id) !== String(user._id)));
-    } catch (error) {
-      alert(error?.response?.data?.error || 'Failed to delete user');
-    } finally {
-      setActionBusyUserId('');
-    }
-  };
-
   return (
     <aside className="chat-sidebar">
       <div className="chat-sidebar-header">
@@ -187,14 +159,6 @@ const ChatList = ({
                     disabled={actionBusyUserId === String(user._id)}
                   >
                     Delete Chat
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(event) => handleDeleteUser(event, user)}
-                    className="chat-btn"
-                    disabled={actionBusyUserId === String(user._id)}
-                  >
-                    Delete User
                   </button>
                 </div>
               </div>

@@ -1,7 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
-const Message = require('../models/Message');
 
 const router = express.Router();
 
@@ -51,41 +50,6 @@ router.get('/', async (req, res) => {
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Delete user and related messages
-router.delete('/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const requesterId = String(req.body?.requesterId || '');
-
-    if (!userId || !requesterId) {
-      return res.status(400).json({ error: 'userId and requesterId are required' });
-    }
-
-    if (String(userId) === requesterId) {
-      return res.status(400).json({ error: 'Cannot delete your own account from chat list' });
-    }
-
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    await Message.deleteMany({
-      $or: [
-        { sender: userId },
-        { receiver: userId },
-      ],
-    });
-
-    await User.deleteOne({ _id: userId });
-
-    return res.json({ success: true, deletedUserId: String(userId) });
-  } catch (error) {
-    return res.status(500).json({ error: 'Server error' });
   }
 });
 

@@ -243,42 +243,6 @@ function AppRoutes({
     });
   }, [currentUserId, selectedChatId, setLatestMessages, setSelectedChat, setUnreadCounts]);
 
-  const handleDeleteUser = useCallback(async (user) => {
-    const targetUserId = String(user?._id || user?.id || '');
-
-    if (!currentUserId || !targetUserId) {
-      return;
-    }
-
-    await axios.delete(`${API_BASE_URL}/api/users/${targetUserId}`, {
-      data: { requesterId: currentUserId },
-    });
-
-    if (selectedChatId === targetUserId) {
-      setSelectedChat(null);
-    }
-
-    setUnreadCounts((prev) => {
-      const next = { ...prev };
-      delete next[targetUserId];
-      return next;
-    });
-
-    setLatestMessages((prev) => {
-      const next = { ...prev };
-      delete next[targetUserId];
-      return next;
-    });
-
-    setOnlineUsers((prev) => prev.filter((id) => String(id) !== targetUserId));
-
-    setLastSeenMap((prev) => {
-      const next = { ...prev };
-      delete next[targetUserId];
-      return next;
-    });
-  }, [currentUserId, selectedChatId, setLastSeenMap, setLatestMessages, setOnlineUsers, setSelectedChat, setUnreadCounts]);
-
   const handleLogout = () => {
     if (socketRef.current && currentUserId) {
       socketRef.current.emit('leave');
@@ -333,7 +297,6 @@ function AppRoutes({
               <ChatList
                 onSelectChat={handleSelectChat}
                 onDeleteChat={handleDeleteChat}
-                onDeleteUser={handleDeleteUser}
                 currentUser={currentUser}
                 onLogout={handleLogout}
                 selectedChat={selectedChat}
