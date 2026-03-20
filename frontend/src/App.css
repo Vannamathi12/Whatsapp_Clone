@@ -313,6 +313,14 @@ body,
   color: #7a746b;
 }
 
+.chat-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  position: relative;
+}
+
 .unread-pill {
   margin-top: 3px;
   background: var(--accent);
@@ -391,6 +399,80 @@ body,
 .chat-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.chat-actions {
+  margin-top: 4px;
+  position: relative;
+}
+
+.chat-delete-trigger {
+  border-color: #f4c7cf;
+  color: #9f1239;
+  background: #fff5f7;
+}
+
+.chat-delete-trigger:hover {
+  background: #ffe9ee;
+}
+
+.chat-delete-trigger.active {
+  border-color: #fda4b4;
+  background: #ffe1e9;
+}
+
+.chat-delete-confirm {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 190px;
+  border: 1px solid #f8c5d0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 14px 24px rgba(64, 18, 29, 0.16);
+  padding: 10px;
+  z-index: 5;
+  animation: slideInConfirm 0.16s ease;
+}
+
+.chat-delete-copy {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6f1d2f;
+  margin-bottom: 8px;
+}
+
+.chat-delete-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.chat-delete-confirm-btn {
+  border-color: #be123c;
+  background: #be123c;
+  color: #fff;
+  flex: 1;
+}
+
+.chat-delete-confirm-btn:hover {
+  background: #9f1239;
+}
+
+.chat-delete-cancel-btn {
+  flex: 1;
+}
+
+@keyframes slideInConfirm {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .chat-scroll-area {

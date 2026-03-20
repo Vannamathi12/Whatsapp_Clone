@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../config';
 
@@ -15,7 +15,22 @@ const ChatList = ({
 }) => {
   const [users, setUsers] = useState([]);
   const [actionBusyUserId, setActionBusyUserId] = useState('');
+  const [deleteCandidateUserId, setDeleteCandidateUserId] = useState('');
+  const deleteActionsRef = useRef(null);
   const onlineUserIds = new Set((onlineUsers || []).map((userId) => String(userId)));
+
+  useEffect(() => {
+    if (!deleteCandidateUserId) return undefined;
+
+    const handleOutsideClick = (event) => {
+      if (deleteActionsRef.current && !deleteActionsRef.current.contains(event.target)) {
+        setDeleteCandidateUserId('');
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [deleteCandidateUserId]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -70,6 +85,22 @@ const ChatList = ({
     return a.username.localeCompare(b.username);
   });
 
+  const handleDeleteIntent = (event, user) => {
+    event.stopPropagation();
+
+    if (actionBusyUserId) {
+      return;
+    }
+
+    const userId = String(user._id);
+    setDeleteCandidateUserId((previous) => (previous === userId ? '' : userId));
+  };
+
+  const handleCancelDelete = (event) => {
+    event.stopPropagation();
+    setDeleteCandidateUserId('');
+  };
+
   const handleDeleteChat = async (event, user) => {
     event.stopPropagation();
 
@@ -77,16 +108,17 @@ const ChatList = ({
       return;
     }
 
-    const confirmed = window.confirm(`Delete all chat history with ${user.username}?`);
+    const userId = String(user._id);
 
-    if (!confirmed) {
+    if (deleteCandidateUserId !== userId) {
       return;
     }
 
-    setActionBusyUserId(String(user._id));
+    setActionBusyUserId(userId);
 
     try {
       await onDeleteChat?.(user);
+      setDeleteCandidateUserId('');
     } catch (error) {
       alert(error?.response?.data?.error || 'Failed to delete chat history');
     } finally {
@@ -142,7 +174,7 @@ const ChatList = ({
                   </div>
                 </div>
               </div>
-              <div className="flex flex-col items-end">
+              <div className="chat-item-right">
                 <span className="chat-time">
                   {formatPreviewTimestamp(latestMessages[user._id])}
                 </span>
@@ -151,15 +183,43 @@ const ChatList = ({
                     {unreadCounts[user._id]}
                   </span>
                 )}
-                <div className="mt-2 flex items-center gap-2">
+                <div
+                  className="chat-actions"
+                  ref={deleteCandidateUserId === String(user._id) ? deleteActionsRef : null}
+                  onClick={(event) => event.stopPropagation()}
+                >
                   <button
                     type="button"
-                    onClick={(event) => handleDeleteChat(event, user)}
-                    className="chat-btn"
+                    onClick={(event) => handleDeleteIntent(event, user)}
+                    className={`chat-btn chat-delete-trigger ${deleteCandidateUserId === String(user._id) ? 'active' : ''}`}
                     disabled={actionBusyUserId === String(user._id)}
                   >
-                    Delete Chat
+                    {actionBusyUserId === String(user._id) ? 'Deleting...' : 'Delete'}
                   </button>
+
+                  {deleteCandidateUserId === String(user._id) && (
+                    <div className="chat-delete-confirm" role="alert">
+                      <span className="chat-delete-copy">Delete this chat?</span>
+                      <div className="chat-delete-buttons">
+                        <button
+                          type="button"
+                          onClick={(event) => handleDeleteChat(event, user)}
+                          className="chat-btn chat-delete-confirm-btn"
+                          disabled={actionBusyUserId === String(user._id)}
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCancelDelete}
+                          className="chat-btn chat-delete-cancel-btn"
+                          disabled={actionBusyUserId === String(user._id)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
