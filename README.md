@@ -107,3 +107,76 @@ npm run dev:chrome
 - Quick health checks:
    - Backend: `curl http://localhost:5000/api/users`
    - Frontend: open `http://localhost:3000`
+
+## Environment Variables Reference
+
+### Backend (`backend/.env`)
+- `MONGODB_URI`
+   - Required: Yes
+   - Example: `mongodb://localhost:27017/whatsapp_clone`
+   - Description: MongoDB connection string used by Mongoose at backend startup.
+
+- `PORT`
+   - Required: Recommended
+   - Example: `5000`
+   - Description: Express server port. Falls back to `5000` if not set.
+
+- `JWT_SECRET`
+   - Required: Recommended for secure deployments
+   - Example: `your_secret_key_here`
+   - Description: Secret used for token-based authentication flows.
+
+- `MESSAGE_RESTORE_WINDOW_MS`
+   - Required: Optional
+   - Example: `5000`
+   - Description: Undo restore window for deleted messages in milliseconds.
+   - Runtime bounds: clamped to `1000`-`60000` ms.
+
+### Frontend (`frontend/.env`)
+- `REACT_APP_API_URL`
+   - Required: Yes for deployment
+   - Example (local): `http://localhost:5000`
+   - Example (hosted): `https://your-backend.onrender.com`
+   - Description: Base URL for frontend REST calls and Socket.IO connection.
+
+## Database Setup Details
+
+### Database Engine
+- MongoDB with Mongoose ODM.
+
+### Collections Used
+- `users`
+   - `username` (String, required, unique)
+   - `email` (String, required, unique)
+   - `password` (String, required)
+   - `createdAt`, `updatedAt` (timestamps)
+
+- `messages`
+   - `sender` (ObjectId -> User, required)
+   - `receiver` (ObjectId -> User, required)
+   - `content` (String, required)
+   - `status` (`sent`, `delivered`, `read`)
+   - `timestamp` (Date)
+   - `isDeleted` (Boolean)
+   - `deletedAt` (Date or null)
+
+### Local MongoDB Setup
+1. Install and run MongoDB locally.
+2. Create `backend/.env` with:
+    - `MONGODB_URI=mongodb://localhost:27017/whatsapp_clone`
+    - `PORT=5000`
+    - `JWT_SECRET=<secure value>`
+    - `MESSAGE_RESTORE_WINDOW_MS=5000`
+3. Start backend (`npm run dev` from project root or `backend` folder).
+
+### MongoDB Atlas Setup (Optional)
+1. Create Atlas cluster and database user.
+2. Allow network access from your app IP.
+3. Set `MONGODB_URI` to Atlas string:
+    - `mongodb+srv://<username>:<password>@<cluster>/<db>?retryWrites=true&w=majority`
+4. Restart backend service.
+
+### Deployment Notes
+- Do not commit real secrets to git.
+- Set backend secrets in hosting platform env settings.
+- Set frontend `REACT_APP_API_URL` to deployed backend URL.

@@ -1,0 +1,94 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Calibri;}}
+\fs24
+\b WhatsApp Clone - Environment Variables and Database Setup\b0\par
+\par
+\b 1) Project Environment Variables\b0\par
+\par
+\b Backend (.env in backend folder)\b0\par
+\par
+\b MONGODB_URI\b0\par
+Required: Yes\par
+Example: mongodb://localhost:27017/whatsapp_clone\par
+Description: MongoDB connection string used by Mongoose to connect to the database at backend startup.\par
+Used in: backend/server.js\par
+\par
+\b PORT\b0\par
+Required: Recommended\par
+Example: 5000\par
+Description: HTTP port used by the backend Express server. If missing, the app falls back to 5000.\par
+Used in: backend/server.js\par
+\par
+\b JWT_SECRET\b0\par
+Required: Recommended for secure deployments\par
+Example: your_secret_key_here\par
+Description: Secret key intended for JWT token signing/verification. Keep private and do not commit real values.\par
+Used in: configured in backend environment template for authentication/security configuration.\par
+\par
+\b MESSAGE_RESTORE_WINDOW_MS\b0\par
+Required: Optional\par
+Example: 5000\par
+Description: Time window (milliseconds) allowed to restore a deleted message. Server clamps this value to a safe range (1000 to 60000 ms).\par
+Used in: backend/routes/messages.js\par
+\par
+\b Frontend (.env in frontend folder)\b0\par
+\par
+\b REACT_APP_API_URL\b0\par
+Required: Yes for production deployments\par
+Example: http://localhost:5000 (local), https://your-backend.onrender.com (hosted)\par
+Description: Base URL used by frontend API calls and socket connection target.\par
+Used in: frontend/src/config.js and frontend API/socket calls.\par
+\par
+\b 2) Database Setup Details\b0\par
+\par
+\b Database Engine\b0\par
+MongoDB with Mongoose ODM\par
+\par
+\b Primary Collections\b0\par
+\par
+\b users\b0\par
+Model: User\par
+Key fields:\par
+- username (String, required, unique)\par
+- email (String, required, unique)\par
+- password (String, required; stored as hashed value by registration flow)\par
+- createdAt, updatedAt (timestamps enabled)\par
+\par
+\b messages\b0\par
+Model: Message\par
+Key fields:\par
+- sender (ObjectId, ref User, required)\par
+- receiver (ObjectId, ref User, required)\par
+- content (String, required)\par
+- status (sent | delivered | read)\par
+- timestamp (Date)\par
+- isDeleted (Boolean)\par
+- deletedAt (Date or null)\par
+\par
+\b Local Database Setup\b0\par
+\par
+1. Install and run MongoDB locally.\par
+2. Create backend/.env with at least:\par
+   MONGODB_URI=mongodb://localhost:27017/whatsapp_clone\par
+   PORT=5000\par
+   JWT_SECRET=replace_with_secure_value\par
+   MESSAGE_RESTORE_WINDOW_MS=5000\par
+3. Start backend from project root or backend folder.\par
+4. Backend connects to MongoDB automatically on startup.\par
+\par
+\b MongoDB Atlas Setup (Optional)\b0\par
+\par
+1. Create a MongoDB Atlas cluster.\par
+2. Create a database user and allow network access from your app IPs.\par
+3. Replace MONGODB_URI in backend/.env with Atlas URI format:\par
+   mongodb+srv://<username>:<password>@<cluster-url>/<db-name>?retryWrites=true&w=majority\par
+4. Restart backend server.\par
+\par
+\b 3) Deployment Notes\b0\par
+\par
+- Backend deployment must define MONGODB_URI and JWT_SECRET as secure environment variables.\par
+- Frontend deployment must define REACT_APP_API_URL pointing to deployed backend URL.\par
+- Never commit real secrets into source control. Use .env files locally and platform env settings in production.\par
+\par
+\b Document generated from current project code and env templates.\b0\par
+}
