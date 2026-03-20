@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
 import axios from 'axios';
@@ -22,6 +22,8 @@ function AppRoutes({
   setLastSeenMap,
   latestMessages,
   setLatestMessages,
+  hiddenChatIds,
+  setHiddenChatsByUser,
 }) {
   const navigate = useNavigate();
   const socketRef = useRef(null);
@@ -30,6 +32,10 @@ function AppRoutes({
 
   const currentUserId = String(currentUser?.id || currentUser?._id || '');
   const selectedChatId = String(selectedChat?._id || selectedChat?.id || '');
+  const hiddenChatIdSet = useMemo(
+    () => new Set((hiddenChatIds || []).map((id) => String(id))),
+    [hiddenChatIds],
+  );
 
   const handlePresenceUpdate = useCallback((payload) => {
     const nextOnlineUsersRaw = Array.isArray(payload) ? payload : payload?.onlineUsers || [];
@@ -198,6 +204,10 @@ function AppRoutes({
   }, [currentUserId, setUnreadCounts]);
 
   const handleSelectChat = useCallback(async (user) => {
+    if (hiddenChatIdSet.has(String(user?._id || user?.id || ''))) {
+      return;
+    }
+
     setSelectedChat(user);
     setUnreadCounts((prev) => ({ ...prev, [user._id]: 0 }));
 
@@ -213,7 +223,13 @@ function AppRoutes({
     } catch (error) {
       console.error('Failed to sync read status:', error);
     }
-  }, [currentUserId, setSelectedChat, setUnreadCounts]);
+  }, [currentUserId, hiddenChatIdSet, setSelectedChat, setUnreadCounts]);
+
+  useEffect(() => {
+    if (selectedChatId && hiddenChatIdSet.has(selectedChatId)) {
+      setSelectedChat(null);
+    }
+  }, [hiddenChatIdSet, selectedChatId, setSelectedChat]);
 
   const handleDeleteChat = useCallback(async (user) => {
     const targetUserId = String(user?._id || user?.id || '');
@@ -222,8 +238,18 @@ function AppRoutes({
       return;
     }
 
-    await axios.delete(`${API_BASE_URL}/api/messages/conversation/${targetUserId}`, {
-      data: { currentUserId },
+    // Optimistic UI: hide the chat immediately even if backend sync is delayed/fails.
+    setHiddenChatsByUser((prev) => {
+      const prevForUser = Array.isArray(prev?.[currentUserId]) ? prev[currentUserId] : [];
+
+      if (prevForUser.includes(targetUserId)) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [currentUserId]: [...prevForUser, targetUserId],
+      };
     });
 
     if (selectedChatId === targetUserId) {
@@ -241,7 +267,23 @@ function AppRoutes({
       delete next[targetUserId];
       return next;
     });
-  }, [currentUserId, selectedChatId, setLatestMessages, setSelectedChat, setUnreadCounts]);
+
+    try {
+      await axios.delete(`${API_BASE_URL}/api/messages/conversation/${targetUserId}`, {
+        params: { currentUserId },
+        data: { currentUserId },
+      });
+    } catch (error) {
+      try {
+        // Some environments/proxies reject DELETE semantics; fallback to POST route.
+        await axios.post(`${API_BASE_URL}/api/messages/conversation/${targetUserId}/delete`, {
+          currentUserId,
+        });
+      } catch (fallbackError) {
+        console.error('Delete chat backend sync failed:', fallbackError?.response?.data || fallbackError.message);
+      }
+    }
+  }, [currentUserId, selectedChatId, setHiddenChatsByUser, setLatestMessages, setSelectedChat, setUnreadCounts]);
 
   const handleLogout = () => {
     if (socketRef.current && currentUserId) {
@@ -304,6 +346,7 @@ function AppRoutes({
                 onlineUsers={onlineUsers}
                 lastSeenMap={lastSeenMap}
                 latestMessages={latestMessages}
+                hiddenChatIds={hiddenChatIds}
               />
               <ChatWindow
                 socket={socketRef.current}
@@ -340,6 +383,14 @@ function App() {
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [lastSeenMap, setLastSeenMap] = useState({});
   const [latestMessages, setLatestMessages] = useState({});
+  const [hiddenChatsByUser, setHiddenChatsByUser] = useState(() => {
+    const stored = localStorage.getItem('hiddenChatsByUser');
+
+    return stored ? JSON.parse(stored) : {};
+  });
+
+  const appCurrentUserId = String(currentUser?.id || currentUser?._id || '');
+  const hiddenChatIds = appCurrentUserId ? (hiddenChatsByUser?.[appCurrentUserId] || []) : [];
 
   useEffect(() => {
     if (currentUser) {
@@ -358,6 +409,10 @@ function App() {
     }
   }, [selectedChat]);
 
+  useEffect(() => {
+    localStorage.setItem('hiddenChatsByUser', JSON.stringify(hiddenChatsByUser));
+  }, [hiddenChatsByUser]);
+
   return (
     <Router>
       <AppRoutes
@@ -373,6 +428,8 @@ function App() {
         setLastSeenMap={setLastSeenMap}
         latestMessages={latestMessages}
         setLatestMessages={setLatestMessages}
+        hiddenChatIds={hiddenChatIds}
+        setHiddenChatsByUser={setHiddenChatsByUser}
       />
     </Router>
   );

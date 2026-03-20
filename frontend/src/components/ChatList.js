@@ -12,6 +12,7 @@ const ChatList = ({
   onlineUsers,
   lastSeenMap,
   latestMessages,
+  hiddenChatIds,
 }) => {
   const [users, setUsers] = useState([]);
   const [actionBusyUserId, setActionBusyUserId] = useState('');
@@ -85,6 +86,9 @@ const ChatList = ({
     return a.username.localeCompare(b.username);
   });
 
+  const hiddenChatIdSet = new Set((hiddenChatIds || []).map((id) => String(id)));
+  const visibleUsers = sortedUsers.filter((user) => !hiddenChatIdSet.has(String(user._id)));
+
   const handleDeleteIntent = (event, user) => {
     event.stopPropagation();
 
@@ -120,7 +124,9 @@ const ChatList = ({
       await onDeleteChat?.(user);
       setDeleteCandidateUserId('');
     } catch (error) {
-      alert(error?.response?.data?.error || 'Failed to delete chat history');
+      const status = error?.response?.status;
+      const message = error?.response?.data?.error || error?.message || 'Failed to delete chat history';
+      alert(status ? `Delete failed (${status}): ${message}` : message);
     } finally {
       setActionBusyUserId('');
     }
@@ -148,11 +154,12 @@ const ChatList = ({
       </div>
       <h4 className="chat-list-title">Chats</h4>
       <ul className="chat-list">
-        {sortedUsers.map(user => (
+        {visibleUsers.map(user => (
           <li
             key={user._id}
             onClick={() => onSelectChat(user)}
             className={`chat-item ${selectedChat?._id === user._id ? 'active' : ''}`}
+            ref={deleteCandidateUserId === String(user._id) ? deleteActionsRef : null}
           >
             <div className="chat-row">
               <div className="chat-row-main">
@@ -183,11 +190,7 @@ const ChatList = ({
                     {unreadCounts[user._id]}
                   </span>
                 )}
-                <div
-                  className="chat-actions"
-                  ref={deleteCandidateUserId === String(user._id) ? deleteActionsRef : null}
-                  onClick={(event) => event.stopPropagation()}
-                >
+                <div className="chat-actions" onClick={(event) => event.stopPropagation()}>
                   <button
                     type="button"
                     onClick={(event) => handleDeleteIntent(event, user)}
@@ -196,33 +199,37 @@ const ChatList = ({
                   >
                     {actionBusyUserId === String(user._id) ? 'Deleting...' : 'Delete'}
                   </button>
-
-                  {deleteCandidateUserId === String(user._id) && (
-                    <div className="chat-delete-confirm" role="alert">
-                      <span className="chat-delete-copy">Delete this chat?</span>
-                      <div className="chat-delete-buttons">
-                        <button
-                          type="button"
-                          onClick={(event) => handleDeleteChat(event, user)}
-                          className="chat-btn chat-delete-confirm-btn"
-                          disabled={actionBusyUserId === String(user._id)}
-                        >
-                          Confirm
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleCancelDelete}
-                          className="chat-btn chat-delete-cancel-btn"
-                          disabled={actionBusyUserId === String(user._id)}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
+
+            {deleteCandidateUserId === String(user._id) && (
+              <div
+                className="chat-delete-confirm chat-delete-confirm-inline"
+                role="alert"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <span className="chat-delete-copy">Delete this chat?</span>
+                <div className="chat-delete-buttons">
+                  <button
+                    type="button"
+                    onClick={(event) => handleDeleteChat(event, user)}
+                    className="chat-btn chat-delete-confirm-btn"
+                    disabled={actionBusyUserId === String(user._id)}
+                  >
+                    Confirm
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelDelete}
+                    className="chat-btn chat-delete-cancel-btn"
+                    disabled={actionBusyUserId === String(user._id)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </li>
         ))}
       </ul>

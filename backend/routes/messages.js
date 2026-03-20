@@ -151,11 +151,16 @@ router.get('/:chatId', async (req, res) => {
   }
 });
 
-// Delete entire conversation for current user and the selected user.
-router.delete('/conversation/:otherUserId', async (req, res) => {
+const deleteConversation = async (req, res) => {
   try {
     const { otherUserId } = req.params;
-    const currentUserId = String(req.body?.currentUserId || '');
+    const currentUserId = String(
+      req.query?.currentUserId
+      || req.query?.userId
+      || req.body?.currentUserId
+      || req.body?.userId
+      || '',
+    ).trim();
 
     if (!otherUserId || !currentUserId) {
       return res.status(400).json({ error: 'otherUserId and currentUserId are required' });
@@ -175,7 +180,13 @@ router.delete('/conversation/:otherUserId', async (req, res) => {
   } catch (error) {
     return res.status(500).json({ error: 'Server error' });
   }
-});
+};
+
+// Delete entire conversation for current user and the selected user.
+router.delete('/conversation/:otherUserId', deleteConversation);
+
+// Fallback endpoint for environments that block DELETE with params/body.
+router.post('/conversation/:otherUserId/delete', deleteConversation);
 
 // Soft delete a message
 router.delete('/:messageId', async (req, res) => {
